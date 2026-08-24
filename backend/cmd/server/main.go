@@ -9,7 +9,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/YOUR_GITHUB_USERNAME/onest/backend/internal/weather"
+	"github.com/solomonng2001/onest/backend/internal/uen"
+	"github.com/solomonng2001/onest/backend/internal/weather"
 )
 
 const (
@@ -23,8 +24,11 @@ func main() {
 	weatherClient := weather.NewClient()
 	weatherService := weather.NewService(weatherClient)
 	weatherHandler := weather.NewHandler(weatherService)
-
 	weatherHandler.RegisterRoutes(mux)
+
+	uenService := uen.NewService()
+	uenHandler := uen.NewHandler(uenService)
+	uenHandler.RegisterRoutes(mux)
 
 	mux.HandleFunc(
 		"GET /health",
@@ -101,7 +105,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 			w.Header().Set(
 				"Access-Control-Allow-Methods",
-				"GET, OPTIONS",
+				"GET, POST, OPTIONS",
 			)
 
 			w.Header().Set(
