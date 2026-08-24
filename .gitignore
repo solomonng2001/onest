@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+
+# Backend
+backend/bin/
+backend/coverage.out
+*.exe
+*.test
+*.out
+
+# Editors
+.idea/
+.vscode/
