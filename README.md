@@ -7,7 +7,7 @@ A full-stack application containing:
 
 The backend is built with Go, while the frontend uses React, TypeScript, and Vite.
 
-# Architecture
+## Architecture
 
 The application uses a React and TypeScript frontend that communicates with a modular Go REST API, which handles UEN validation locally and retrieves weather data from data.gov.sg.
 
