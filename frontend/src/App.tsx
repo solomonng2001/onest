@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import "./App.css";
 
 type Tab = "weather" | "uen";
@@ -13,13 +13,27 @@ type WeatherResponse = {
   forecasts: Forecast[];
 };
 
+type UENResponse = {
+  uen: string;
+  valid: boolean;
+  format?: string;
+  message: string;
+};
+
 const WEATHER_API_URL = "http://localhost:8080/api/weather";
+const UEN_API_URL = "http://localhost:8080/api/uen/validate";
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>("weather");
+
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isWeatherLoading, setIsWeatherLoading] = useState(true);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
+
+  const [uen, setUen] = useState("");
+  const [uenResult, setUenResult] = useState<UENResponse | null>(null);
+  const [isUENLoading, setIsUENLoading] = useState(false);
+  const [uenError, setUenError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadWeather() {
@@ -40,18 +54,55 @@ function App() {
 
         setWeather(result);
       } catch (requestError) {
-        setError(
+        setWeatherError(
           requestError instanceof Error
             ? requestError.message
             : "Unable to load the weather forecast.",
         );
       } finally {
-        setIsLoading(false);
+        setIsWeatherLoading(false);
       }
     }
 
     void loadWeather();
   }, []);
+
+  async function validateUEN(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setUenResult(null);
+    setUenError(null);
+    setIsUENLoading(true);
+
+    try {
+      const response = await fetch(UEN_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          uen: uen.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `UEN request failed with status ${response.status}`,
+        );
+      }
+
+      const result: UENResponse = await response.json();
+      setUenResult(result);
+    } catch (requestError) {
+      setUenError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to validate the UEN.",
+      );
+    } finally {
+      setIsUENLoading(false);
+    }
+  }
 
   return (
     <div className="app-shell">
@@ -61,7 +112,7 @@ function App() {
         </div>
       </header>
 
-      <main className="container">
+      <main className="container main-content">
         <nav className="tabs" aria-label="OneST services">
           <button
             type="button"
@@ -90,21 +141,22 @@ function App() {
           <section className="page" role="tabpanel">
             <div className="page-heading">
               <h2>Two-hour weather forecast</h2>
+              <p>View the latest forecast across Singapore.</p>
 
               {weather && (
-                <p>
+                <p className="valid-period">
                   Valid period: <strong>{weather.validPeriod}</strong>
                 </p>
               )}
             </div>
 
-            {isLoading && (
+            {isWeatherLoading && (
               <p className="status">Loading forecast...</p>
             )}
 
-            {error && (
+            {weatherError && (
               <p className="status status-error" role="alert">
-                {error}
+                {weatherError}
               </p>
             )}
 
@@ -134,7 +186,70 @@ function App() {
           <section className="page" role="tabpanel">
             <div className="page-heading">
               <h2>UEN validation</h2>
-              <p>This service will be added next.</p>
+              <p>Check whether a Unique Entity Number has a valid format.</p>
+            </div>
+
+            <div className="uen-card">
+              <form className="uen-form" onSubmit={validateUEN}>
+                <label htmlFor="uen">Unique Entity Number</label>
+
+                <div className="uen-input-row">
+                  <input
+                    id="uen"
+                    type="text"
+                    value={uen}
+                    onChange={(event) => {
+                      setUen(event.target.value.toUpperCase());
+                      setUenResult(null);
+                      setUenError(null);
+                    }}
+                    placeholder="For example, 200912345N"
+                    autoComplete="off"
+                    required
+                  />
+
+                  <button type="submit" disabled={isUENLoading}>
+                    {isUENLoading ? "Validating..." : "Validate UEN"}
+                  </button>
+                </div>
+
+                <p className="input-hint">
+                  Enter the UEN without spaces or symbols.
+                </p>
+              </form>
+
+              {uenResult && (
+                <div
+                  className={
+                    uenResult.valid
+                      ? "uen-result uen-result-valid"
+                      : "uen-result uen-result-invalid"
+                  }
+                  role="status"
+                >
+                  <p className="result-title">
+                    {uenResult.valid ? "Valid UEN format" : "Invalid UEN format"}
+                  </p>
+
+                  <p>{uenResult.message}</p>
+
+                  {uenResult.format && (
+                    <p className="result-format">
+                      Format:{" "}
+                      <strong>
+                        {uenResult.format.replaceAll("_", " ")}
+                      </strong>
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {uenError && (
+                <div className="uen-result uen-result-invalid" role="alert">
+                  <p className="result-title">Unable to validate UEN</p>
+                  <p>{uenError}</p>
+                </div>
+              )}
             </div>
           </section>
         )}
