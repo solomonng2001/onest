@@ -16,7 +16,7 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-func (h *Handler) Register(mux *http.ServeMux) {
+func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/uen/validate", h.Validate)
 }
 
